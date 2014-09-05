@@ -52,10 +52,10 @@ module.exports = function(grunt) {
 
     // Extend grunt-locales
     extendGruntPlugin(grunt, require('grunt-locales'), {
-      'locales.build' : options
+      'locales.update' : options
     });
     // Run grunt-locales locales:build task
-    grunt.task.run('locales:build');
+    grunt.task.run('locales:update');
   });
 
 };
