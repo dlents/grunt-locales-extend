@@ -13,9 +13,6 @@ module.exports = function(grunt) {
   // Please see the Grunt documentation for more information regarding task
   // creation: http://gruntjs.com/creating-tasks
 
-  // Use plugin to extend grunt-locales
-  var extendGruntPlugin = require('extend-grunt-plugin');
-
   function MyTask(task) {
     this.options = task.options({
       separator: ', ',
@@ -27,10 +24,9 @@ module.exports = function(grunt) {
 
     this.task = task;
     this.done = task.async();
-    grunt.log.writeln("task " + task.target + " is a " + grunt.util.kindOf(this[task.target]));
 
     // initialize the plugin we're extending
-    this.basePlugin = this.initBasePlugin();
+    this.basePlugin = this.initializeBasePlugin();
 
     if (grunt.util.kindOf(this[task.target]) === 'function') {
       this[task.target]();
@@ -70,33 +66,25 @@ module.exports = function(grunt) {
      * property names here correspond to task targets
      */
 
-    initBasePlugin: function() {
+    initializeBasePlugin: function() {
         var basePluginName = this.options.basePlugin.pluginName,
           basePluginTask = this.options.basePlugin.pluginTask,
-          basePluginConfig = grunt.config.get(this.task.name),
-          newGrunt = grunt;
+          basePluginConfig = grunt.config.get(this.task.name);
 
-      // var plugin = require(basePluginName);
-      // newGrunt.config.set(basePluginTask, basePluginConfig);
-      // this.logObject(newGrunt.config.get());
-      return plugin;
+      var plugin = require(basePluginName);
+      var pluginExports = plugin(grunt);
+      grunt.config.set(basePluginTask, basePluginConfig);
+      this.logObject(grunt.config.get());
+      return pluginExports; // may not be useful, or even be defined ...
     },
 
     passthru: function() {
       var that = this,
-        basePlugin = this.options.basePlugin.pluginName,
         baseTask = this.options.basePlugin.pluginTask,
-        passthruTasks = {};
-      var baseTarget = baseTask + ':' + that.task.target;
-      var baseConfig = baseTarget.replace(':', '.');
-
-      passthruTasks[baseTask] = that.options;
-      passthruTasks[baseConfig] = that.task.data;
-
-      extendGruntPlugin(grunt, that.basePlugin, passthruTasks);
+        baseTarget = baseTask + ':' + that.task.target;
 
       grunt.task.run(baseTarget);
-      return this.done();
+      return that.done();
 
     },
 
@@ -109,20 +97,12 @@ module.exports = function(grunt) {
       ));
     },
 
-    ext_update: function () {
+    addExternalMessages: function () {
       var that = this,
         dest = this.getDestinationFilePath(),
         locale,
         externalMessages,
         messages = {};
-
-      // this.logObject(foo);
-      var plugin = this.basePlugin;
-      var bar = plugin.jsEscape('var data = "OUTPUT"');
-      this.logObject(bar);
-      // this.logObject(this.jsEscape('var data = "OUTPUT"'));
-
-      return that.done();
 
       externalMessages = that.parseExternalMessages();
       Object.keys(externalMessages).forEach(function (locale) {
