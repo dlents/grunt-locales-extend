@@ -67,14 +67,16 @@ module.exports = function(grunt) {
      */
 
     initializeBasePlugin: function() {
-        var basePluginName = this.options.basePlugin.pluginName,
-          basePluginTask = this.options.basePlugin.pluginTask,
-          basePluginConfig = grunt.config.get(this.task.name);
+      var basePluginName = this.options.basePlugin.pluginName,
+        basePluginTask = this.options.basePlugin.pluginTask,
+        basePluginConfig = grunt.config.get(this.task.name);
 
       var plugin = require(basePluginName);
       var pluginExports = plugin(grunt);
       grunt.config.set(basePluginTask, basePluginConfig);
-      this.logObject(grunt.config.get());
+      // current task config is now gone ...
+      grunt.config.set(this.task.name, basePluginConfig);
+      this.logObject(grunt.config.get(this.task.name + ': '), this.task.name);
       return pluginExports; // may not be useful, or even be defined ...
     },
 
@@ -88,9 +90,10 @@ module.exports = function(grunt) {
 
     },
 
-    logObject: function (obj) {
-      var theObject = obj;
-      grunt.log.writeln('logObject: ' + JSON.stringify(
+    logObject: function (obj, msg) {
+      var theObject = obj,
+        theMessage = msg|| 'logObject: ';
+      grunt.log.writeln(theMessage + JSON.stringify(
         theObject,
         this.options.jsonReplacer,
         this.options.jsonSpace
