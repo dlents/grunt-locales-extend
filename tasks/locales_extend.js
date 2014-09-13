@@ -15,8 +15,10 @@ module.exports = function(grunt) {
 
   function MyTask(task) {
     this.options = task.options({
-      separator: ', ',
-      punctuation: "\n",
+      pluginExtender: {
+        basePluginName: "grunt-locales",
+        basePluginTask: "locales"
+      },
       localePlaceholder: '{locale}',
       localeName: 'i18n',
       jsonSpace: 2
@@ -67,22 +69,21 @@ module.exports = function(grunt) {
      */
 
     initializeBasePlugin: function() {
-      var basePluginName = this.options.basePlugin.pluginName,
-        basePluginTask = this.options.basePlugin.pluginTask,
+      var basePluginOptions = this.options.pluginExtender,
         basePluginConfig = grunt.config.get(this.task.name);
 
-      var plugin = require(basePluginName);
+      var plugin = require(basePluginOptions.basePluginName);
       var pluginExports = plugin(grunt);
-      grunt.config.set(basePluginTask, basePluginConfig);
+      grunt.config.set(basePluginOptions.basePluginTask, basePluginConfig);
       // current task config is now gone ...
       grunt.config.set(this.task.name, basePluginConfig);
-      this.logObject(grunt.config.get(this.task.name + ': '), this.task.name);
+      this.logObject(grunt.config.get(this.task.name), this.task.name + ': ');
       return pluginExports; // may not be useful, or even be defined ...
     },
 
     passthru: function() {
       var that = this,
-        baseTask = this.options.basePlugin.pluginTask,
+        baseTask = this.options.pluginExtender.basePluginTask,
         baseTarget = baseTask + ':' + that.task.target;
 
       grunt.task.run(baseTarget);
@@ -100,7 +101,7 @@ module.exports = function(grunt) {
       ));
     },
 
-    addExternalMessages: function () {
+    import_external_messages: function () {
       var that = this,
         dest = this.getDestinationFilePath(),
         locale,

@@ -20,17 +20,47 @@ grunt.loadNpmTasks('grunt-locales-extend');
 ## The "locales_extend" task
 
 ### Overview
+
+Note that `update`, `build`, `export`, and `import` are grunt-locale tasks, and they are simply passed off to the [grunt-locales](https://github.com/blueimp/grunt-locales) plugin. The options should also contain [grunt-locales](https://github.com/blueimp/grunt-locales) options. Refer to the [grunt-locales README](https://github.com/blueimp/grunt-locales) for details on the options and tasks.
+
+This plugin extends the [grunt-locales](https://github.com/blueimp/grunt-locales) plugin by defining the `add_translations` task. This task parses external JSON file(s) containing translation text and updates the i18n JSON files created by the [grunt-locales](https://github.com/blueimp/grunt-locales) `update` task.
+
+### Usage Examples
+
+#### Setup
 In your project's Gruntfile, add a section named `locales_extend` to the data object passed into `grunt.initConfig()`.
 
 ```js
 grunt.initConfig({
   locales_extend: {
     options: {
-      // Task-specific options go here.
+      locales: ['en_US', 'de_DE']
     },
-    your_target: {
-      // Target-specific file lists and/or options go here.
+    update: {
+        src: [
+            'templates/**/*.html',
+            'js/app/**/*.js'
+        ],
+        dest: 'js/locales/{locale}/i18n.json'
     },
+    add_translations: {
+        files: [{
+            src: ['js/translations/**/*.json'],
+            dest: '<%= locales_extend.update.dest %>'
+        }]
+    }
+    build: {
+        src: 'js/locales/**/i18n.json',
+        dest: 'js/locales/{locale}/i18n.js'
+    },
+    'export': {
+        src: 'js/locales/**/i18n.json',
+        dest: 'js/locales/{locale}/i18n.csv'
+    },
+    'import': {
+        src: 'js/locales/**/i18n.csv',
+        dest: 'js/locales/{locale}/i18n.json'
+    }
   },
 });
 ```
@@ -49,7 +79,7 @@ Default value: `'.'`
 
 A string value that is used to do something else with whatever else.
 
-### Usage Examples
+
 
 #### Default Options
 In this example, the default options are used to do something with whatever. So if the `testing` file has the content `Testing` and the `123` file had the content `1 2 3`, the generated result would be `Testing, 1 2 3.`
