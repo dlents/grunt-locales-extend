@@ -121,9 +121,12 @@ module.exports = function(grunt) {
         for (dataId in externalLocaleData) {
           if (messages.hasOwnProperty(dataId)) {
             messages[dataId].value = externalLocaleData[dataId].value;
-            if (typeof externalLocaleData[dataId].files == 'array' && externalLocaleData[dataId].files.count > 0) {
-              messages[dataId].files = externalLocaleData[dataId].files;
+            var msgFiles = messages[dataId].files || [];
+            if (externalLocaleData[dataId].files.length > 0) {
+              msgFiles = msgFiles.concat(externalLocaleData[dataId].files);
             }
+            msgFiles.sort();
+            messages[dataId].files = _.unique(msgFiles, true);
           }
           else {
             messages[dataId] = externalLocaleData[dataId];
