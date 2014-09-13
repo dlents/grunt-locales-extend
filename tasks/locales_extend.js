@@ -9,7 +9,7 @@
 
 module.exports = function(grunt) {
   'use strict';
-
+  var _s = require('underscore');
   // Please see the Grunt documentation for more information regarding task
   // creation: http://gruntjs.com/creating-tasks
 
@@ -77,7 +77,6 @@ module.exports = function(grunt) {
       grunt.config.set(basePluginOptions.basePluginTask, basePluginConfig);
       // current task config is now gone ...
       grunt.config.set(this.task.name, basePluginConfig);
-      this.logObject(grunt.config.get(this.task.name), this.task.name + ': ');
       return pluginExports; // may not be useful, or even be defined ...
     },
 
@@ -126,7 +125,7 @@ module.exports = function(grunt) {
               msgFiles = msgFiles.concat(externalLocaleData[dataId].files);
             }
             msgFiles.sort();
-            messages[dataId].files = _.unique(msgFiles, true);
+            messages[dataId].files = _s.unique(msgFiles, true);
           }
           else {
             messages[dataId] = externalLocaleData[dataId];
