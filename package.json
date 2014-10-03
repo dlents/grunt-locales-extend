@@ -39,6 +39,9 @@
     "grunt": "~0.4.5"
   },
   "keywords": [
-    "gruntplugin"
+    "gruntplugin",
+    "locales",
+    "i18n",
+    "internationization"
   ]
 }
