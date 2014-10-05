@@ -28,16 +28,7 @@ module.exports = function (grunt) {
          poeditor: {
             api_token: '',  // required, obviously
             project_id: '',
-            api: {
-               host: 'poeditor.com',
-               port: 443,
-               path: '/api/',
-               method: 'POST',
-               headers: {
-                  'Content-Type': 'application/x-www-form-urlencoded',
-                  'Content-Length': 0
-               }
-            }
+            reference_language: 'en'
          }
       });
 
@@ -57,11 +48,11 @@ module.exports = function (grunt) {
    }
 
    grunt.registerMultiTask(
-         'locales_extend',
-         'Extends grunt-locales plugin',
-         function () {
-            return new ExtendedTask(this);
-         }
+       'locales_extend',
+       'Extends grunt-locales plugin',
+       function () {
+          return new ExtendedTask(this);
+       }
    );
 
    function extend(dst) {
@@ -87,7 +78,7 @@ module.exports = function (grunt) {
 
       initializeBasePlugin: function () {
          var basePluginOptions = this.options.pluginExtender,
-               basePluginConfig = grunt.config.get(this.task.name);
+             basePluginConfig = grunt.config.get(this.task.name);
 
          var plugin = require(basePluginOptions.basePluginName);
          var pluginExports = plugin(grunt);
@@ -99,8 +90,8 @@ module.exports = function (grunt) {
 
       passthru: function () {
          var that = this,
-               baseTask = this.options.pluginExtender.basePluginTask,
-               baseTarget = baseTask + ':' + that.task.target;
+             baseTask = this.options.pluginExtender.basePluginTask,
+             baseTarget = baseTask + ':' + that.task.target;
 
          grunt.task.run(baseTarget);
          return that.done();
@@ -109,31 +100,83 @@ module.exports = function (grunt) {
 
       logObject: function (obj, msg) {
          var theObject = obj,
-               theMessage = msg || 'logObject: ';
+             theMessage = msg || 'logObject: ';
          grunt.log.writeln(theMessage + JSON.stringify(
-               theObject,
-               this.options.jsonReplacer,
-               this.options.jsonSpace
+             theObject,
+             this.options.jsonReplacer,
+             this.options.jsonSpace
          ));
       },
 
-      poeditor_test: function () {
-         poeditor(this.options.poeditor, 'add_language', this.task);
+      poed_test: function () {
+         var data = grunt.config.get(this.task.name);
+         // console.log(JSON.stringify(data[this.task.target], null, 3));
+         poeditor.requestAPI(this.options.poeditor, 'available_languages', data[this.task.target]);
+         this.done();
+      },
+
+      poeditor_update_terms: function () {
+         var that = this,
+             refLanguage = this.options.poeditor.reference_language,
+             poEdTermsUpdate = [],
+             poEdTranslationsUpdate = [],
+             refLocaleFiles = this.getSourceFiles().filter(function (file) {
+                if (!grunt.file.exists(file)) {
+                   grunt.log.warn('Source file ' + file.cyan + ' not found.');
+                   return false;
+                }
+                if (file.match('/' + refLanguage + '/')) {
+                   return true;
+                }
+                return false;
+             });
+
+         refLocaleFiles.forEach(function (file) {
+            var dataId,
+                messages = grunt.file.readJSON(file);
+
+            grunt.log.writeln('Parsed reference locale file ' + file.magenta + '.');
+            for (dataId in messages) {
+               var term = {
+                  term: dataId,
+                  context: "",
+                  reference: messages[dataId].files[0],
+                  plural: ""
+               };
+               poEdTermsUpdate.push(term);
+               var refTranslation = {
+                  term: {
+                     term: dataId,
+                     context: ""
+                  },
+                  definition: {
+                     forms: [
+                        messages[dataId].value
+                     ]
+                  }
+               };
+               poEdTranslationsUpdate.push(refTranslation);
+            }
+         });
+         // update terms
+         // poeditor.requestAPI(that.options.poeditor, 'add_terms', {data: poEdTermsUpdate});
+         poeditor.requestAPI(that.options.poeditor, 'update_language', {language: refLanguage, data: poEdTranslationsUpdate});
+         // that.done();
       },
 
       import_external_messages: function () {
          var that = this,
-               dest = this.getDestinationFilePath(),
-               locale,
-               externalMessages,
-               messages = {};
+             dest = this.getDestinationFilePath(),
+             locale,
+             externalMessages,
+             messages = {};
 
          externalMessages = that.parseExternalMessages();
          Object.keys(externalMessages).forEach(function (locale) {
             var localeFile = dest.replace(that.options.localePlaceholder, locale),
-                  localFileExists = grunt.file.exists(localeFile),
-                  externalLocaleData = externalMessages[locale],
-                  dataId;
+                localFileExists = grunt.file.exists(localeFile),
+                externalLocaleData = externalMessages[locale],
+                dataId;
             if (localFileExists) {
                messages = grunt.file.readJSON(localeFile);
                grunt.log.writeln('Parsed locale messages from ' + localeFile.cyan + '.');
@@ -153,9 +196,9 @@ module.exports = function (grunt) {
                }
             }
             grunt.file.write(localeFile, JSON.stringify(
-                  messages,
-                  that.options.jsonReplacer,
-                  that.options.jsonSpace
+                messages,
+                that.options.jsonReplacer,
+                that.options.jsonSpace
             ));
          });
          return that.done();
@@ -163,17 +206,17 @@ module.exports = function (grunt) {
 
       parseExternalMessages: function () {
          var that = this,
-               externalMessages = {},
-               localeData = {},
-               key;
+             externalMessages = {},
+             localeData = {},
+             key;
 
          this.getSourceFiles().forEach(function (file) {
             var dataId,
-                  externalMessages = grunt.file.readJSON(file);
+                externalMessages = grunt.file.readJSON(file);
             grunt.log.writeln('Parsed external messages from ' + file.cyan + '.');
             for (dataId in externalMessages) {
                var locales = externalMessages[dataId].locales,
-                     files = externalMessages[dataId].files || [];
+                   files = externalMessages[dataId].files || [];
 
                Object.keys(locales).forEach(function (locale) {
                   var data = {};
