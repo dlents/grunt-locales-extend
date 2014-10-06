@@ -4,27 +4,22 @@
 
 'use strict';
 
-var https = require('https'),
-      querystring = require('querystring');
+var request = require('request'),
+    querystring = require('querystring');
 
 exports.init = function (grunt) {
    var exports = {};
 
    exports.defaultOptions = {
-      host: 'poeditor.com',
-      port: 443,
-      path: '/api/',
-      method: 'POST',
-      headers: {
-         'Content-Type': 'application/x-www-form-urlencoded',
-         'Content-Length': 0
-      }
+      url: 'https://poeditor.com/api/',
+      method: 'POST'
    };
 
-   exports.requestAPI = function (options, action, data) {
+   exports.requestAPI = function (options, action, data, handler) {
 
       // set up the API request (POST) query string
-      var request = options.api || exports.defaultOptions;
+      var reqOptions = options.api || exports.defaultOptions;
+
       var apiCommand = {
          api_token: options.api_token,
          id: options.project_id,
@@ -44,31 +39,22 @@ exports.init = function (grunt) {
          }
       }
 
-      var apiPostData = querystring.stringify(apiCommand);
-      request.headers['Content-Length'] = apiPostData.length;
-      if (action === 'update_language') {
-         console.log("Request:\n" + JSON.stringify(request, null, 3));
-         console.log("\n\napiCommand:\n" + JSON.stringify(apiCommand, null, 3));
-         console.log("\n\napiPostData:\n" + JSON.stringify(apiPostData, null, 3));
-      }
+      reqOptions.form = apiCommand;
 
-      var req = https.request(request, function (res) {
-         res.setEncoding('utf8');
-         console.log("statusCode: ", res.statusCode);
-         console.log("headers: ", res.headers);
+      // console.log("In requestAPI with options:\n" + JSON.stringify(reqOptions, null, 3));
+      request(reqOptions, function (error, response, body) {
+         console.log('In request callback');
+         if (!error && response.statusCode == 200) {
+            var info = JSON.parse(body);
+            console.log("Response:\n" + JSON.stringify(info, null, 3));
+         }
+         else {
+            console.log('Error: ' + response.statusCode);
+            console.log(body);
+         }
+      });
+      return true;
 
-         res.on('data', function (d) {
-            var res = JSON.parse(d);
-            console.log(JSON.stringify(res, null, 3));
-         });
-      });
-      req.write(apiPostData);
-      req.end();
-      req.on('error', function (e) {
-         console.error(e);
-         console.error("post data:\n" + apiPostData);
-      });
    };
-
    return exports;
 };

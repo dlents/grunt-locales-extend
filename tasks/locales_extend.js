@@ -6,13 +6,15 @@
  * Licensed under the {%= licenses.join(', ') %} license{%= licenses.length === 1 ? '' : 's' %}.
  */
 
+'use strict';
+
+var _s = require('underscore'); // TODO: should be outside module.exports?
+
 module.exports = function (grunt) {
-   'use strict';
 
    // internal lib that provides poeditor API function
    var poeditor = require('./lib/poeditor').init(grunt);
 
-   var _s = require('underscore'); // TODO: should be outside module.exports?
    // Please see the Grunt documentation for more information regarding task
    // creation: http://gruntjs.com/creating-tasks
 
@@ -44,7 +46,6 @@ module.exports = function (grunt) {
       else {
          this.passthru();
       }
-
    }
 
    grunt.registerMultiTask(
@@ -135,7 +136,6 @@ module.exports = function (grunt) {
             var dataId,
                 messages = grunt.file.readJSON(file);
 
-            grunt.log.writeln('Parsed reference locale file ' + file.magenta + '.');
             for (dataId in messages) {
                var term = {
                   term: dataId,
@@ -157,11 +157,29 @@ module.exports = function (grunt) {
                };
                poEdTranslationsUpdate.push(refTranslation);
             }
+            grunt.log.writeln('Parsed reference locale file ' + file.magenta + '.');
          });
-         // update terms
+
+         that.callPOEditorAPI('add_terms', {data: poEdTermsUpdate});
          // poeditor.requestAPI(that.options.poeditor, 'add_terms', {data: poEdTermsUpdate});
-         poeditor.requestAPI(that.options.poeditor, 'update_language', {language: refLanguage, data: poEdTranslationsUpdate});
-         // that.done();
+         that.callPOEditorAPI('update_language', {language: refLanguage, data: poEdTranslationsUpdate});
+         // that.done(); // can't do that with the api calls above
+      },
+
+      callPOEditorAPI: function(action, args) {
+         var that = this;
+         poeditor.requestAPI(that.options.poeditor, action, args, function (error, response, body) {
+            console.log('In request callback');
+            if (!error && response.statusCode == 200) {
+               var info = JSON.parse(body);
+               console.log("Response:\n" + JSON.stringify(info, null, 3));
+            }
+            else {
+               console.log('Error: ' + response.statusCode);
+               console.log(body);
+            }
+            that.done();
+         });
       },
 
       import_external_messages: function () {
