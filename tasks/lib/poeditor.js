@@ -12,7 +12,8 @@ exports.init = function (grunt) {
 
    exports.defaultOptions = {
       url: 'https://poeditor.com/api/',
-      method: 'POST'
+      method: 'POST',
+      strictSSL: false
    };
 
    exports.requestAPI = function (options, action, data, handler) {
@@ -41,9 +42,7 @@ exports.init = function (grunt) {
 
       reqOptions.form = apiCommand;
 
-      // console.log("In requestAPI with options:\n" + JSON.stringify(reqOptions, null, 3));
       request(reqOptions, function (error, response, body) {
-         console.log('In request callback');
          if (!error && response.statusCode == 200) {
             var info = JSON.parse(body);
             console.log("Response:\n" + JSON.stringify(info, null, 3));
