@@ -109,13 +109,6 @@ module.exports = function (grunt) {
          ));
       },
 
-      poed_test: function () {
-         var data = grunt.config.get(this.task.name);
-         // console.log(JSON.stringify(data[this.task.target], null, 3));
-         poeditor.requestAPI(this.options.poeditor, 'available_languages', data[this.task.target]);
-         this.done();
-      },
-
       poeditor_update_terms: function () {
          var that = this,
              refLanguage = this.options.poeditor.reference_language,
@@ -160,10 +153,29 @@ module.exports = function (grunt) {
             grunt.log.writeln('Parsed reference locale file ' + file.magenta + '.');
          });
 
-         that.callPOEditorAPI('add_terms', {data: poEdTermsUpdate});
+         that.callPOEditorAPI('sync_terms', {data: poEdTermsUpdate});
          // poeditor.requestAPI(that.options.poeditor, 'add_terms', {data: poEdTermsUpdate});
          that.callPOEditorAPI('update_language', {language: refLanguage, data: poEdTranslationsUpdate});
          // that.done(); // can't do that with the api calls above
+      },
+
+      // used to delete terms from testing - left here for reference
+      poeditor_delete_terms: function() {
+         // one time thing
+         var that = this,
+             terms = ['test1', 'test2', 'test3', 'test4', 'This is a test'],
+             contexts = ['context for test1', 'context for test2', 'context for test1', 'context for test2', ''],
+             args = { data: [] };
+
+         terms.forEach(function (element, index) {
+            args.data.push({
+               term: element,
+               context: contexts[index]
+            });
+         });
+
+         that.callPOEditorAPI('delete_terms', args);
+
       },
 
       callPOEditorAPI: function(action, args) {

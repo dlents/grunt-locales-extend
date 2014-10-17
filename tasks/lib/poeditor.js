@@ -4,8 +4,7 @@
 
 'use strict';
 
-var request = require('request'),
-    querystring = require('querystring');
+var request = require('request');
 
 exports.init = function (grunt) {
    var exports = {};
