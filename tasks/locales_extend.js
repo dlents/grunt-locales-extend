@@ -109,6 +109,23 @@ module.exports = function (grunt) {
          ));
       },
 
+      poeditor_list_languages: function () {
+         var that = this,
+             langCodes = [];
+
+         return that.callPOEditorAPI('list_languages')
+             .then(function (res) {
+                console.log('Got: ', JSON.stringify(res, null, 3));
+                res.list.forEach(function (langData) {
+                   langCodes.push(langData.code);
+                });
+                return that.options.locales = langCodes;
+             })
+             .catch(function (e) {
+                console.error(e);
+             });
+      },
+
       poeditor_update_terms: function () {
          var that = this,
              refLanguage = this.options.poeditor.reference_language,
@@ -159,39 +176,78 @@ module.exports = function (grunt) {
          // that.done(); // can't do that with the api calls above
       },
 
-      // used to delete terms from testing - left here for reference
-      poeditor_delete_terms: function() {
-         // one time thing
+      poeditor_get_translations: function () { //TODO: probably needs optional language(s) argument
          var that = this,
-             terms = ['test1', 'test2', 'test3', 'test4', 'This is a test'],
-             contexts = ['context for test1', 'context for test2', 'context for test1', 'context for test2', ''],
-             args = { data: [] };
+             dest = that.getDestinationFilePath();
 
-         terms.forEach(function (element, index) {
-            args.data.push({
-               term: element,
-               context: contexts[index]
-            });
-         });
+         that.poeditor_list_languages()
+             .then(function (langList) {
+                langList.forEach(function (locale) {
+                   that.callPOEditorAPI('view_terms', {language: locale})
+                       .then(function (res) {
+                          // console.log('Got: ', JSON.stringify(res, null, 3));
 
-         that.callPOEditorAPI('delete_terms', args);
+                          var messages = {},
+                              externalMessages = that.parsePoEditorTranslation(locale, res.list);
 
+                             var localeFile = dest.replace(that.options.localePlaceholder, locale),
+                                 localFileExists = grunt.file.exists(localeFile),
+                                 externalLocaleData = externalMessages[locale],
+                                 dataId;
+                             if (localFileExists) {
+                                messages = grunt.file.readJSON(localeFile);
+                                grunt.log.writeln('Parsed locale messages from ' + localeFile.cyan + '.');
+                             }
+                             for (dataId in externalLocaleData) {
+                                if (messages.hasOwnProperty(dataId)) {
+                                   messages[dataId].value = externalLocaleData[dataId].value;
+                                   var msgFiles = messages[dataId].files;
+                                   if (externalLocaleData[dataId].files.length > 0) {
+                                      msgFiles = msgFiles.concat(externalLocaleData[dataId].files);
+
+                                   }
+                                   if (msgFiles.length > 1) {
+                                      // msgFiles.sort();
+                                      msgFiles = _s.unique(msgFiles, true);
+                                   }
+                                   messages[dataId].files = msgFiles;
+                                }
+                                else {
+                                   messages[dataId] = externalLocaleData[dataId];
+                                }
+                             }
+                             grunt.file.write(localeFile, JSON.stringify(
+                                 messages,
+                                 that.options.jsonReplacer,
+                                 that.options.jsonSpace
+                             ));
+                          // console.log('Got: ', JSON.stringify(data, null, 3));
+                       })
+                       .catch(function (e) {
+                          console.error(e);
+                       });
+                });
+             });
       },
 
-      callPOEditorAPI: function(action, args) {
-         var that = this;
-         poeditor.requestAPI(that.options.poeditor, action, args, function (error, response, body) {
-            console.log('In request callback');
-            if (!error && response.statusCode == 200) {
-               var info = JSON.parse(body);
-               console.log("Response:\n" + JSON.stringify(info, null, 3));
-            }
-            else {
-               console.log('Error: ' + response.statusCode);
-               console.log(body);
-            }
-            that.done();
+      parsePoEditorTranslation: function (locale, terms) {
+         var that = this,
+             localeData = {},
+             key;
+         localeData[locale] = {};
+         terms.forEach(function (termData) {
+            var term = termData.term,
+                files = Array.isArray(termData.reference) ? termData.reference : [termData.reference];
+            // console.log('files: ', files);
+            // console.log('localeData[locale][term]: ', locale, term)
+            localeData[locale][term] = {
+               value: termData.definition.form,
+               files: files
+            };
+
          });
+         console.dir(localeData);
+         return localeData;
       },
 
       import_external_messages: function () {
@@ -263,6 +319,37 @@ module.exports = function (grunt) {
          });
          return localeData;
       },
+
+      // used to delete terms from testing - left here for reference
+      poeditor_delete_terms: function () {
+         // one time thing
+         var that = this,
+             terms = ['test1', 'test2', 'test3', 'test4', 'This is a test'],
+             contexts = ['context for test1', 'context for test2', 'context for test1', 'context for test2', ''],
+             args = {data: []};
+
+         terms.forEach(function (element, index) {
+            args.data.push({
+               term: element,
+               context: contexts[index]
+            });
+         });
+
+         that.callPOEditorAPI('delete_terms', args);
+
+      },
+
+      callPOEditorAPI: function (action, args) {
+         var that = this;
+         return poeditor.requestAPI(that.options.poeditor, action, args)
+             .then(function (response) {
+                return JSON.parse(response);
+             })
+             .catch(function (e) {
+                console.log('Error: ', e);
+             });
+      },
+
 
       /*
        * Utility properties (functions)

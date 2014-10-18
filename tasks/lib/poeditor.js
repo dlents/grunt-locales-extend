@@ -4,11 +4,13 @@
 
 'use strict';
 
-var request = require('request');
-
 exports.init = function (grunt) {
+   var Promise = require('bluebird'),
+       request = Promise.promisifyAll(require('request'));
+
    var exports = {};
 
+   // exports.Promise = Promise;
    exports.defaultOptions = {
       url: 'https://poeditor.com/api/',
       method: 'POST',
@@ -40,19 +42,21 @@ exports.init = function (grunt) {
       }
 
       reqOptions.form = apiCommand;
+      function clientError(e) {
+         console.error('oops!');
+         return e.code >= 400 && e.code < 500;
+      };
 
-      request(reqOptions, function (error, response, body) {
-         if (!error && response.statusCode == 200) {
-            var info = JSON.parse(body);
-            console.log("Response:\n" + JSON.stringify(info, null, 3));
-         }
-         else {
-            console.log('Error: ' + response.statusCode);
-            console.log(body);
-         }
-      });
-      return true;
-
+      return request.postAsync(reqOptions)
+          .spread(function (response, body) {
+             var info = JSON.parse(body);
+             // console.log("Response:\n" + JSON.stringify(info, null, 3));
+             return response.body;
+          })
+          .catch(clientError, function(e){
+             console.log(e);
+          });
    };
+
    return exports;
 };
