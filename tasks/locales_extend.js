@@ -346,7 +346,7 @@ module.exports = function (grunt) {
                 return JSON.parse(response);
              })
              .catch(function (e) {
-                console.log('Error: ', e);
+                console.error('Error: ', e);
              });
       },
 

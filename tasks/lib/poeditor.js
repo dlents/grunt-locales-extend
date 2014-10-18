@@ -50,11 +50,11 @@ exports.init = function (grunt) {
       return request.postAsync(reqOptions)
           .spread(function (response, body) {
              var info = JSON.parse(body);
-             // console.log("Response:\n" + JSON.stringify(info, null, 3));
+             // // console.log("Response:\n" + JSON.stringify(info, null, 3));
              return response.body;
           })
           .catch(clientError, function(e){
-             console.log(e);
+             console.error(e);
           });
    };
 
