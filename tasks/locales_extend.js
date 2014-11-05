@@ -128,7 +128,7 @@ module.exports = function (grunt) {
                     });
         },
 
-        poeditor_available_languagess: function() {
+        poeditor_available_languages: function() {
             var that = this,
                     langCodes = [];
             return that.callPOEditorAPI('available_languages')
