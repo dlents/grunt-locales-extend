@@ -128,6 +128,18 @@ module.exports = function (grunt) {
                     });
         },
 
+        poeditor_available_languagess: function() {
+            var that = this,
+                    langCodes = [];
+            return that.callPOEditorAPI('available_languages')
+                    .then(function(res) {
+                        console.log('Available languages: ', JSON.stringify(res, null, 3));
+                    })
+                    .catch(function(e) {
+                        console.error(e);
+                    });
+        },
+
         poeditor_update_terms: function () {
             var that = this,
                     refLanguage = this.options.poeditor.reference_language,
