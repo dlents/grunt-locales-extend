@@ -318,15 +318,21 @@ module.exports = function (grunt) {
                             files = externalMessages[dataId].files || [];
 
                     Object.keys(locales).forEach(function (locale) {
-                        var data = {};
-                        if (!localeData.hasOwnProperty(locale)) {
-                            localeData[locale] = {};
+                        // reject template vars
+                        if (!locales[locale].value.contains('{{')) {
+                            if (!localeData.hasOwnProperty(locale)) {
+                                localeData[locale] = {};
+                            }
+                            var data = {
+                                value: locales[locale].value,
+                                files: files
+                            };
+                            localeData[locale][dataId] = data;
                         }
-                        data = {
-                            value: locales[locale].value,
-                            files: files
-                        };
-                        localeData[locale][dataId] = data;
+                        else {
+                            grunt.log.writeln('Skipping bad value in term "' + dataId.cyan + '"');
+                            grunt.log.writeln('Term: ' + locales[locale].value.red);
+                        }
                     });
                 }
             });
