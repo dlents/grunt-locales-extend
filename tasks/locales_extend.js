@@ -214,7 +214,9 @@ module.exports = function (grunt) {
                                         }
                                         for (dataId in externalLocaleData) {
                                             if (messages.hasOwnProperty(dataId)) {
-                                                messages[dataId].value = externalLocaleData[dataId].value;
+                                                if (externalLocaleData[dataId].value != '') {
+                                                    messages[dataId].value = externalLocaleData[dataId].value;
+                                                }
                                                 var msgFiles = messages[dataId].files;
                                                 if (externalLocaleData[dataId].files.length > 0) {
                                                     msgFiles = msgFiles.concat(externalLocaleData[dataId].files);
